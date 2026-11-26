@@ -121,17 +121,25 @@ def lower_bound(sorted_items, target, key=lambda x: x):
     Target: O(log n).  Keep two pointers lo, hi and halve the range each step.
     """
 
+    #print(f"-------------------\nSORTED_ITEMS: {sorted_items}\nTARGET: {target}\n-------------------\n")
+
+    if len(sorted_items) == 0:
+        return 0
+
     start = 0
-    end = len(sorted_items) - 1
-    middle = None
+    end = len(sorted_items)
+    middle = 0
 
     while start < end:
         middle = (start + end) // 2
-        if key(sorted_items[middle]) < target:
-            start = middle
-            
-
-    return middle
+        #print(f"---WHILE START---\nSTART: {start}\n MIDDLE: {middle}\nEND: {end}\n")
+        if key(sorted_items[middle]) >= target:
+            end = middle
+        else:
+            start = middle + 1
+        #print(f"---WHILE END---\nSTART: {start}\n MIDDLE: {middle}\nEND: {end}\n")  
+    #print(f"LOWER BOUND: {start}")
+    return start
     #raise NotImplementedError("Part 2: lower_bound")
 
 
@@ -157,18 +165,68 @@ class MinHeap:
 
     def push(self, priority, item):
         """Add an item. Append at the end, then 'bubble up'. O(log n)."""
-        raise NotImplementedError("Part 3: MinHeap.push")
+        #print(f"\nPRIORITY: {priority}\nITEM: {item}\n\n")
+
+        self._a.append((priority, self._count, item))
+        self._count += 1
+
+        size = len(self._a)
+        index = size - 1
+        parent_index = (index - 1) // 2
+
+        #print(f"\n---PUSH----\nPIORITY: {priority}\nITEM: {item}")
+
+        while index > 0 and self._a[index][0] < self._a[parent_index][0]:
+            temp_index = self._a[index]
+            self._a[index] = self._a[parent_index]
+            self._a[parent_index] = temp_index
+            index = parent_index
+            parent_index = (index - 1) // 2
+        #print(f"HEAP: {self._a}")
+        #raise NotImplementedError("Part 3: MinHeap.push")
 
     def peek(self):
         """Return (priority, item) with the smallest priority without removing it.
         Raise IndexError if the heap is empty. O(1)."""
-        raise NotImplementedError("Part 3: MinHeap.peek")
+        if len(self._a) == 0:
+            raise IndexError("MinHeap is empty.")
+
+        return (self._a[0][0], self._a[0][2])
+        #raise NotImplementedError("Part 3: MinHeap.peek")
 
     def pop(self):
         """Remove and return (priority, item) with the smallest priority.
         Move the last entry to the top, then 'bubble down'.
         Raise IndexError if the heap is empty. O(log n)."""
-        raise NotImplementedError("Part 3: MinHeap.pop")
+        #print(f"SIZE: {len(self._a)}")
+        if len(self._a) == 0:
+            raise IndexError("MinHeap is empty.")
+
+        min = (self._a[0][0], self._a[0][2])
+        self._a[0] = self._a[-1]
+        self._a = self._a[:-1]
+
+        size = len(self._a)
+        current_index = 0
+        while True:
+            parent_index = current_index
+            left_child_index = current_index * 2 + 1
+            right_child_index = current_index * 2 + 2
+
+            if left_child_index < size and self._a[left_child_index] < self._a[parent_index]:
+                parent_index = left_child_index
+            if right_child_index < size and self._a[right_child_index] < self._a[parent_index]:
+                parent_index = right_child_index
+            if parent_index != current_index:
+                temp_current = self._a[current_index]
+                self._a[current_index] = self._a[parent_index]
+                self._a[parent_index] = temp_current
+                current_index = parent_index
+            else:
+                break
+        #print(f"POP:{min}\n---HEAP---\n{self._a}\n\n")
+        return min
+        #raise NotImplementedError("Part 3: MinHeap.pop")
 
 
 # =====================================================================
