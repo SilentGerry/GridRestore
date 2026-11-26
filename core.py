@@ -45,7 +45,24 @@ def build_index(records, key):
     Example: records with ids A, B, A  ->  ({"A": ..., "B": ...}, ["A"])
     Target: expected O(n) time.
     """
-    raise NotImplementedError("Part 1: build_index")
+
+    indexed = {}
+    duplicates = []
+
+    #print(f"RECORDS: {records}\nKEY: {key}")
+
+    for record in records:
+        #print(f"RECORD: {record[0]}")
+        if record[key] not in indexed:
+            indexed[record[key]] = record
+        else:
+            if record[key] not in duplicates:
+                duplicates.append(record[key])
+
+    #print(f"INDEXED: {indexed}\n\nDUPLICATES: {duplicates}")
+    return indexed, duplicates
+
+    #raise NotImplementedError("Part 1: build_index")
 
 
 # =====================================================================
@@ -61,7 +78,37 @@ def merge_sort(items, key=lambda x: x):
               (when the keys are equal, take from the LEFT half -> stable)
     Target: O(n log n).
     """
-    raise NotImplementedError("Part 2: merge_sort")
+
+    #print(f"ITEMS: {items}\n\nKEY: {key}")
+
+    size = len(items)
+    if size <= 1:
+        return items
+
+    middle = size // 2
+    #print(f"MIDDLE: {middle}\n\nLEFT: {items[:middle]}\n\nRIGHT: {items[middle:]}\n")
+    left_items = merge_sort(items[:middle], key)
+    right_items = merge_sort(items[middle:], key)
+    merge_sorted = []
+    left_count = 0
+    right_count = 0
+
+    while len(left_items) > left_count and len(right_items) > right_count:
+        #print(f"LEFT: {left_items}\nRIGHT: {right_items}\n")
+        if key(left_items[left_count]) <= key(right_items[right_count]):
+            merge_sorted.append(left_items[left_count])
+            left_count += 1
+        else:
+            merge_sorted.append(right_items[right_count])
+            right_count += 1
+
+    merge_sorted.extend(left_items[left_count:])
+    merge_sorted.extend(right_items[right_count:])
+
+    #print(f"ITEMS{items}\nMERGE_SORTED: {merge_sorted}\n")
+
+    return merge_sorted
+    #raise NotImplementedError("Part 2: merge_sort")
 
 
 def lower_bound(sorted_items, target, key=lambda x: x):
@@ -73,7 +120,19 @@ def lower_bound(sorted_items, target, key=lambda x: x):
     Example: [1, 3, 3, 5, 9] with target 3 -> 1,  target 4 -> 3,  target 10 -> 5
     Target: O(log n).  Keep two pointers lo, hi and halve the range each step.
     """
-    raise NotImplementedError("Part 2: lower_bound")
+
+    start = 0
+    end = len(sorted_items) - 1
+    middle = None
+
+    while start < end:
+        middle = (start + end) // 2
+        if key(sorted_items[middle]) < target:
+            start = middle
+            
+
+    return middle
+    #raise NotImplementedError("Part 2: lower_bound")
 
 
 # =====================================================================
