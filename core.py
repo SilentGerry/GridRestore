@@ -331,7 +331,48 @@ def kmp_search(text, pattern):
     2) scan the text once, never moving backwards in the text
     Target: O(n + m).  Do not use str.find, str.index, `in` on strings, or re.
     """
-    raise NotImplementedError("Part 7: kmp_search")
+
+    #print(f"\nTEXT: {text}\nPATTERN: {pattern}\n")
+
+    pattern_size = len(pattern)
+
+    if pattern_size == 0:
+        return []
+
+    fail = [0] * pattern_size
+    length = 0
+    index = 1
+
+    while index < pattern_size:
+        if pattern[index] == pattern[length]:
+            length += 1
+            fail[index] = length
+            index += 1
+        elif length > 0:
+            length = fail[length - 1]
+        else:
+            fail[index] = 0
+            index += 1
+
+    pattern_index = 0
+    text_index = 0
+    matches = []
+    text_size = len(text)
+
+    while text_index < text_size:
+        if text[text_index] == pattern[pattern_index]:
+            text_index += 1
+            pattern_index += 1
+            if pattern_index == pattern_size:
+                matches.append(text_index - pattern_index)
+                pattern_index = fail[pattern_index - 1]
+        elif pattern_index > 0:
+            pattern_index = fail[pattern_index - 1]
+        else:
+            text_index += 1
+
+    return matches
+    #raise NotImplementedError("Part 7: kmp_search")
 
 
 # =====================================================================
@@ -351,7 +392,25 @@ def tour_brute_force(start, stops, dist):
     (do not repeat start at the end). If stops is empty return ([start], 0).
     Target: O(n!) - only for about 9 stops or fewer.
     """
-    raise NotImplementedError("Part 8: tour_brute_force")
+
+    #print(f"\nSTART: {start}\nSTOPS: {stops}\nDIST: {dist}\n\n")
+
+    if len(stops) == 0:
+        return ([start], 0)
+
+    routes = list(permutations(stops))
+    shortest = ([start] + list(routes[0]), tour_cost([start] + list(routes[0]), dist))
+
+    print(f"SHORTEST: {shortest}")
+
+    for route in routes[1:]:
+        curr_cost = tour_cost([start] + list(route), dist)
+        if curr_cost < shortest[1]:
+            shortest = ([start] + list(route), curr_cost)
+
+    return shortest
+
+    #raise NotImplementedError("Part 8: tour_brute_force")
 
 
 def tour_heuristic(start, stops, dist):
