@@ -245,8 +245,38 @@ def greedy_select(items, capacity):
     Return (chosen_ids, total_value, total_weight), chosen_ids in the order taken.
     Target: O(n log n).
     """
-    raise NotImplementedError("Part 4: greedy_select")
+    
+    # Sort jobs from highest value per weight to lowest.
+    # The negative sign makes merge_sort sort in descending order.
+    # We use the merge_sort function from Part 2.
+    ordered_items = merge_sort(
+        items, key=lambda item: -(item["value"] / item["weight"])
+    )
 
+    # Store the IDs of the jobs we decide to take.
+    chosen_ids = []
+
+    # Keep track of the total value and weight used.
+    total_value = 0
+    total_weight = 0
+
+    # Go through each job, starting with the best ratio.
+    for item in ordered_items:
+
+        # Check if this job can fit within our remaining capacity.
+        if total_weight + item["weight"] <= capacity:
+
+            # Add the job to our selected list.
+            chosen_ids.append(item["id"])
+
+            # Update the total value and weight.
+            total_value += item["value"]
+            total_weight += item["weight"]
+
+    # Return the selected jobs and their totals.
+    return chosen_ids, total_value, total_weight
+
+    #raise NotImplementedError("Part 4: greedy_select")
 
 # =====================================================================
 # PART 5 - Dynamic programming: 0/1 knapsack                (Weeks 6-7)
@@ -263,8 +293,69 @@ def dp_select(items, capacity):
     Return (chosen_ids, total_value, total_weight). chosen_ids in the same order
     as the items list. Target: O(n * capacity) time.
     """
-    raise NotImplementedError("Part 5: dp_select")
+    # Count how many repair jobs are available.
+    n = len(items)
 
+    # Create a table filled with zeros.
+    # Rows represent the number of jobs considered.
+    # Columns represent the available repair capacity.
+    best = [[0] * (capacity + 1) for _ in range(n + 1)]
+
+    # Go through each repair job.
+    for i in range(1, n + 1):
+
+        # Get the current job's weight and value.
+        weight = items[i - 1]["weight"]
+        value = items[i - 1]["value"]
+
+        # Try every possible capacity.
+        for c in range(capacity + 1):
+
+            # Choice 1: Skip the current job.
+            best[i][c] = best[i - 1][c]
+
+            # Choice 2: Take the current job if it fits.
+            if weight <= c:
+
+                # Add its value to the best remaining plan.
+                take_value = best[i - 1][c - weight] + value
+
+                # Keep whichever choice gives us more value.
+                if take_value > best[i][c]:
+                    best[i][c] = take_value
+
+    # Store the selected repair jobs.
+    chosen_ids = []
+    total_weight = 0
+
+    # The last table cell contains the best possible value.
+    total_value = best[n][capacity]
+
+    # Start with the full capacity.
+    remaining = capacity
+
+    # Walk backward through the table to find the chosen jobs.
+    for i in range(n, 0, -1):
+
+        # If the value changed, this job was selected.
+        if best[i][remaining] != best[i - 1][remaining]:
+
+            item = items[i - 1]
+
+            # Save the job's ID and weight.
+            chosen_ids.append(item["id"])
+            total_weight += item["weight"]
+
+            # Remove the capacity used by this job.
+            remaining -= item["weight"]
+
+    # Reverse IDs to restore their original order.
+    chosen_ids.reverse()
+
+    # Return the optimal repair plan.
+    return chosen_ids, total_value, total_weight
+
+    #raise NotImplementedError("Part 5: dp_select")
 
 # =====================================================================
 # PART 6 - Graphs                                           (Weeks 9-10)
@@ -279,8 +370,44 @@ def bfs_reachable(graph, start, blocked_edge=None):
     Return a dict  node -> number of hops from start  for every reachable node
     (start itself has 0). Use collections.deque as the queue. Target: O(V + E).
     """
-    raise NotImplementedError("Part 6: bfs_reachable")
+    # Store each reachable location and its number of hops.
+    # The starting location is zero hops away.
+    reachable = {start: 0}
 
+    # Create a FIFO queue containing the starting location.
+    queue = deque([start])
+
+    # Keep exploring until there are no locations left.
+    while queue:
+
+        # Remove the first location from the queue.
+        current = queue.popleft()
+
+        # Check every neighbor connected to this location.
+        for neighbor, weight in graph[current]:
+
+            # If a power line is blocked, skip it.
+            # Check both directions because the graph is undirected.
+            if blocked_edge is not None:
+                u, v = blocked_edge
+
+                if (current == u and neighbor == v) or \
+                   (current == v and neighbor == u):
+                    continue
+
+            # Only visit locations we have not discovered before.
+            if neighbor not in reachable:
+
+                # The neighbor is one more hop away.
+                reachable[neighbor] = reachable[current] + 1
+
+                # Add the neighbor to the back of the queue.
+                queue.append(neighbor)
+
+    # Return all reachable locations and their hop counts.
+    return reachable
+
+    #raise NotImplementedError("Part 6: bfs_reachable")
 
 def dijkstra(graph, start):
     """Shortest paths from start (all weights >= 0). Use YOUR MinHeap.
@@ -290,7 +417,51 @@ def dijkstra(graph, start):
       prev[node] : the node just before it on that path (prev[start] = None)
     Only reachable nodes appear in dist and prev. Target: O((V + E) log V).
     """
-    raise NotImplementedError("Part 6: dijkstra")
+    # Store shortest known distance to each location.
+    # The starting location has a distance of zero.
+    dist = {start: 0}
+
+    # Remember the previous location on each shortest route.
+    prev = {start: None}
+
+    # Use Student A's MinHeap from Part 3.
+    heap = MinHeap()
+
+    # Add the starting location with a priority of zero.
+    heap.push(0, start)
+
+    # Continue until the priority queue is empty.
+    while len(heap) > 0:
+
+        # Get the location with the smallest known distance.
+        current_distance, current = heap.pop()
+
+        # Skip old entries if we already found a shorter route.
+        if current_distance > dist[current]:
+            continue
+
+        # Check all neighbors connected to this location.
+        for neighbor, weight in graph[current]:
+
+            # Calculate the distance through the current location.
+            new_distance = current_distance + weight
+
+            # Check if this is a new location or a shorter route.
+            if neighbor not in dist or new_distance < dist[neighbor]:
+
+                # Save the improved shortest distance.
+                dist[neighbor] = new_distance
+
+                # Remember where we came from.
+                prev[neighbor] = current
+
+                # Add the improved route to the priority queue.
+                heap.push(new_distance, neighbor)
+
+    # Return shortest distances and previous locations.
+    return dist, prev
+
+    #raise NotImplementedError("Part 6: dijkstra")
 
 
 def path_to(prev, target):
@@ -315,7 +486,79 @@ def mst_kruskal(nodes, edges):
     in different components. Return (tree_edges, total_cost), tree_edges as
     (u, v, cost) in the order added. Target: O(E log E).
     """
-    raise NotImplementedError("Part 6: mst_kruskal")
+        # Each location starts in its own separate group.
+    parent = {node: node for node in nodes}
+
+    # Track the rank of each group to help merge groups efficiently.
+    rank = {node: 0 for node in nodes}
+
+    # Find which group a location belongs to.
+    def find(node):
+
+        # If this node is not its own parent,
+        # follow its parent until we reach the group leader.
+        if parent[node] != node:
+
+            # Save group leader to make future searches faster.
+            parent[node] = find(parent[node])
+
+        return parent[node]
+
+    # Combine two separate groups.
+    def union(a, b):
+
+        # Find leaders of both groups.
+        root_a = find(a)
+        root_b = find(b)
+
+        # If both locations are already connected,
+        # adding this connection would create a cycle.
+        if root_a == root_b:
+            return False
+
+        # Attach smaller-rank group to the larger-rank group.
+        if rank[root_a] < rank[root_b]:
+            parent[root_a] = root_b
+
+        elif rank[root_a] > rank[root_b]:
+            parent[root_b] = root_a
+
+        else:
+            # If both ranks are equal, merge them
+            # and increase rank of the new leader.
+            parent[root_b] = root_a
+            rank[root_a] += 1
+
+        # The groups were successfully connected.
+        return True
+
+    # Sort connections by cost, cheapest first.
+    # Use Student A's merge_sort from Part 2.
+    ordered_edges = merge_sort(edges, key=lambda edge: edge[2])
+
+    # Store connections we choose.
+    tree_edges = []
+    total_cost = 0
+
+    # Check each connection from cheapest to most expensive.
+    for u, v, cost in ordered_edges:
+
+        # Only take the connection if it joins separate groups.
+        if union(u, v):
+
+            # Save the connection and update total cost.
+            tree_edges.append((u, v, cost))
+            total_cost += cost
+
+            # A connected tree only needs V - 1 edges.
+            # Stop once we have enough connections.
+            if len(tree_edges) == len(nodes) - 1:
+                break
+
+    # Return cheapest network and its total cost.
+    return tree_edges, total_cost
+
+    #raise NotImplementedError("Part 6: mst_kruskal")
 
 
 # =====================================================================
