@@ -49,8 +49,6 @@ def build_index(records, key):
     indexed = {}
     duplicates = []
 
-    #print(f"RECORDS: {records}\nKEY: {key}")
-
     for record in records:
         #print(f"RECORD: {record[0]}")
         if record[key] not in indexed:
@@ -59,7 +57,6 @@ def build_index(records, key):
             if record[key] not in duplicates:
                 duplicates.append(record[key])
 
-    #print(f"INDEXED: {indexed}\n\nDUPLICATES: {duplicates}")
     return indexed, duplicates
 
     #raise NotImplementedError("Part 1: build_index")
@@ -79,14 +76,11 @@ def merge_sort(items, key=lambda x: x):
     Target: O(n log n).
     """
 
-    #print(f"ITEMS: {items}\n\nKEY: {key}")
-
     size = len(items)
     if size <= 1:
         return items
 
     middle = size // 2
-    #print(f"MIDDLE: {middle}\n\nLEFT: {items[:middle]}\n\nRIGHT: {items[middle:]}\n")
     left_items = merge_sort(items[:middle], key)
     right_items = merge_sort(items[middle:], key)
     merge_sorted = []
@@ -94,7 +88,6 @@ def merge_sort(items, key=lambda x: x):
     right_count = 0
 
     while len(left_items) > left_count and len(right_items) > right_count:
-        #print(f"LEFT: {left_items}\nRIGHT: {right_items}\n")
         if key(left_items[left_count]) <= key(right_items[right_count]):
             merge_sorted.append(left_items[left_count])
             left_count += 1
@@ -105,7 +98,6 @@ def merge_sort(items, key=lambda x: x):
     merge_sorted.extend(left_items[left_count:])
     merge_sorted.extend(right_items[right_count:])
 
-    #print(f"ITEMS{items}\nMERGE_SORTED: {merge_sorted}\n")
 
     return merge_sorted
     #raise NotImplementedError("Part 2: merge_sort")
@@ -121,8 +113,6 @@ def lower_bound(sorted_items, target, key=lambda x: x):
     Target: O(log n).  Keep two pointers lo, hi and halve the range each step.
     """
 
-    #print(f"-------------------\nSORTED_ITEMS: {sorted_items}\nTARGET: {target}\n-------------------\n")
-
     if len(sorted_items) == 0:
         return 0
 
@@ -132,13 +122,11 @@ def lower_bound(sorted_items, target, key=lambda x: x):
 
     while start < end:
         middle = (start + end) // 2
-        #print(f"---WHILE START---\nSTART: {start}\n MIDDLE: {middle}\nEND: {end}\n")
         if key(sorted_items[middle]) >= target:
             end = middle
         else:
             start = middle + 1
-        #print(f"---WHILE END---\nSTART: {start}\n MIDDLE: {middle}\nEND: {end}\n")  
-    #print(f"LOWER BOUND: {start}")
+
     return start
     #raise NotImplementedError("Part 2: lower_bound")
 
@@ -165,7 +153,6 @@ class MinHeap:
 
     def push(self, priority, item):
         """Add an item. Append at the end, then 'bubble up'. O(log n)."""
-        #print(f"\nPRIORITY: {priority}\nITEM: {item}\n\n")
 
         self._a.append((priority, self._count, item))
         self._count += 1
@@ -182,7 +169,7 @@ class MinHeap:
             self._a[parent_index] = temp_index
             index = parent_index
             parent_index = (index - 1) // 2
-        #print(f"HEAP: {self._a}")
+
         #raise NotImplementedError("Part 3: MinHeap.push")
 
     def peek(self):
@@ -198,7 +185,7 @@ class MinHeap:
         """Remove and return (priority, item) with the smallest priority.
         Move the last entry to the top, then 'bubble down'.
         Raise IndexError if the heap is empty. O(log n)."""
-        #print(f"SIZE: {len(self._a)}")
+
         if len(self._a) == 0:
             raise IndexError("MinHeap is empty.")
 
@@ -224,7 +211,7 @@ class MinHeap:
                 current_index = parent_index
             else:
                 break
-        #print(f"POP:{min}\n---HEAP---\n{self._a}\n\n")
+
         return min
         #raise NotImplementedError("Part 3: MinHeap.pop")
 
@@ -332,8 +319,6 @@ def kmp_search(text, pattern):
     Target: O(n + m).  Do not use str.find, str.index, `in` on strings, or re.
     """
 
-    #print(f"\nTEXT: {text}\nPATTERN: {pattern}\n")
-
     pattern_size = len(pattern)
 
     if pattern_size == 0:
@@ -393,15 +378,11 @@ def tour_brute_force(start, stops, dist):
     Target: O(n!) - only for about 9 stops or fewer.
     """
 
-    #print(f"\nSTART: {start}\nSTOPS: {stops}\nDIST: {dist}\n\n")
-
     if len(stops) == 0:
         return ([start], 0)
 
     routes = list(permutations(stops))
     shortest = ([start] + list(routes[0]), tour_cost([start] + list(routes[0]), dist))
-
-    print(f"SHORTEST: {shortest}")
 
     for route in routes[1:]:
         curr_cost = tour_cost([start] + list(route), dist)
@@ -422,7 +403,35 @@ def tour_heuristic(start, stops, dist):
        reversal helps
     Return (order, cost) in the same format as tour_brute_force.
     """
-    raise NotImplementedError("Part 8: tour_heuristic")
+
+    route = [start]
+    curr_stop = start
+    size = len(stops)
+
+    for i in range(size):
+        sorted_neighbors = merge_sort([x for x in dist[curr_stop].items() if x[0] not in route and x[0] in stops], key=lambda item: item[1])
+        route.append(sorted_neighbors[0][0])
+
+    shortest_route = route
+    shortest_cost = tour_cost(route, dist)
+    better = True
+
+    while better:
+        better = False
+        for start in range(1,size - 1):
+            for end in range(start + 1, size - 1):
+                candidate_route = shortest_route[:start] + shortest_route[start:end + 1][::-1] + shortest_route[end + 1:]
+                candidate_cost = tour_cost(candidate_route, dist)
+                if candidate_cost < shortest_cost:
+                    shortest_route = candidate_route
+                    shortest_cost = candidate_cost
+                    better = True
+                    break
+            if better:
+                break
+
+    return (shortest_route, shortest_cost)
+    #raise NotImplementedError("Part 8: tour_heuristic")
 
 
 # =====================================================================
